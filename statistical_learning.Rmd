@@ -1,0 +1,49 @@
+---
+title: "Statistical Learning"
+output: html_document
+date: "2025-11-20"
+---
+
+```{r}
+library(tidyverse)
+library(glmnet)
+library(palmerpenguins)
+
+set.seed(11)
+```
+
+## Do LASSO
+
+```{r}
+bwt_df = 
+  read_csv("data/birthweight.csv") |> 
+  janitor::clean_names() |>
+  mutate(
+    babysex = 
+        case_match(babysex,
+            1 ~ "male",
+            2 ~ "female"
+        ),
+    babysex = fct_infreq(babysex),
+    frace = 
+        case_match(frace,
+            1 ~ "white",
+            2 ~ "black", 
+            3 ~ "asian", 
+            4 ~ "puerto rican", 
+            8 ~ "other"),
+    frace = fct_infreq(frace),
+    mrace = 
+        case_match(mrace,
+            1 ~ "white",
+            2 ~ "black", 
+            3 ~ "asian", 
+            4 ~ "puerto rican",
+            8 ~ "other"),
+    mrace = fct_infreq(mrace),
+    malform = as.logical(malform)) |> 
+  sample_n(200)
+```
+
+
+
