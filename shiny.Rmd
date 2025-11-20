@@ -1,0 +1,126 @@
+---
+title: "Shiny Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(viridis)
+library(p8105.datasets)
+library(plotly)
+```
+
+```{r}
+data(nyc_airbnb)
+
+nyc_airbnb = 
+  nyc_airbnb |> 
+  mutate(stars = review_scores_location / 2) |> 
+  select(
+    borough = neighbourhood_group, neighbourhood, stars, price, lat, long, room_type
+  )
+```
+
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+boroughs = nyc_airbnb |> distinct(borough) |> pull()
+
+selectInput(
+  "borough_choice", #inputID variable
+  label = h3("Select Borough"), #what the user sees. h3 = header type 3 (bigger font)
+  choices = boroughs,
+  selected = "Manhattan" #Manhattan by default
+)
+```
+
+```{r}
+min_price = nyc_airbnb |> pull(price) |> min()
+max_price = nyc_airbnb |> pull(price) |> max()
+
+sliderInput(
+  "price_choice", #inputID
+  label = "Choose a price range",
+  min = min_price,
+  max = 1000,
+  value = c(200, 400)
+)
+```
+
+```{r}
+room_options = nyc_airbnb |> distinct(room_type) |> pull()
+
+radioButtons(
+  "room_choice",
+  label = h3("Select a room type"),
+  choices = room_options,
+  selected = "Entire Home / Apt"
+)
+```
+
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+renderPlotly(
+nyc_airbnb |> 
+  filter(borough == input[["borough_choice"]], #2 means pulling out the smaller value 
+         price <= input[["price_choice"]][2],
+         price >= input[["price_choice"]][1],
+         room_type == input[["room_choice"]]
+         ) |> 
+  plot_ly(
+    x = ~long, y = ~lat, color = ~price,
+    type = "scatter", mode = "markers"
+  )
+)
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+renderPlotly(
+  nyc_airbnb |> 
+    filter(
+      borough == input[["borough_choice"]],
+      price <= input[["price_choice"]][2],
+      price >= input[["price_choice"]][1],
+      room_type == input[["room_choice"]]
+    ) |>
+    count(neighbourhood) |> 
+    mutate(neighbourhood = fct_reorder(neighbourhood, n)) |> 
+    plot_ly( x = ~neighbourhood, y = ~n, type = "bar")
+)
+```
+
+### Chart C
+
+```{r}
+renderPlotly(
+  nyc_airbnb |> 
+    filter(
+      borough == input[["borough_choice"]],
+      price <= input[["price_choice"]][2],
+      price >= input[["price_choice"]][1],
+      room_type == input[["room_choice"]]
+    ) |>
+    mutate(neighbourhood = fct_reorder(neighbourhood, price)) |> 
+    plot_ly(x = ~neighbourhood, y = ~price, type = "box")
+)
+
+```
